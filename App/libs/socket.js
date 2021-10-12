@@ -3,7 +3,12 @@ const redisLib = require('./redisLib')
 
 module.exports.setSocketServer = (server) => {
 
-    let io = new socketServer.Server(server)
+    let io = new socketServer.Server(server, {
+        cors: {
+            origin: "*",
+            methods: ["GET", "POST"]
+        }
+    })
 
     io.on('error', e => console.log(e))
 

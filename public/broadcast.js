@@ -6,7 +6,7 @@ const config = {
 const liveUserDiv = document.getElementById('liveuser')
 const username = prompt("Enter username without space")
 
-const socket = io.connect(window.location.origin);
+const socket = io.connect("https://3.108.60.176.nip.io");
 
 socket.on("answer", (id, description) => {
   peerConnections[id].setRemoteDescription(description);

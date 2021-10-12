@@ -5,7 +5,7 @@ const config = {
 
 console.log(liveUserName)
 console.log(liveUserId)
-const socket = io.connect(window.location.origin);
+const socket = io.connect("https://3.108.60.176.nip.io");
 const video = document.querySelector("video");
 const enableAudioButton = document.querySelector("#enable-audio");
 
