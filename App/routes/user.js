@@ -3,7 +3,7 @@ const userController = require('./../controllers/userController');
 module.exports.setRouter = (app) => {
     app.get('/get-all-users', userController.getAllUser);
 
-    app.get('/get-single-user', userController.getSingleUser);
+    app.get('/get-single-user/:userId', userController.getSingleUser);
 
     app.post('/edit-user', userController.editUser);
 

@@ -8,5 +8,15 @@ module.exports.setRouter = (app) => {
 
     app.get('/get-all-reel', reelConroller.getReels);
 
-    app.get('/reel-by-user/:userId', reelConroller.getReelsByUser)
+    app.get('/reel-by-user/:userId', reelConroller.getReelsByUser);
+
+    app.post('/like-reel', reelConroller.likeReels);
+
+    app.get('/get-reels-like-by-user', reelConroller.getReelLikeByUser);
+
+    app.get('/view-reel', reelConroller.viewReels);
+
+    app.post('/comment-reel', reelConroller.commentReel);
+
+    app.get('/get-comment-by-reel/:reelId', reelConroller.getAllCommentsByReel)
 }

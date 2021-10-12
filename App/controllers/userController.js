@@ -79,7 +79,7 @@ let signUpFunction = asyncHandler(async (req, res) => {
         }
     }))
     await new Promise(asyncHandler(async () => {
-        let retrievedUserDetails = await UserModel.findOne({ email: req.body.email }).exec();
+        let retrievedUserDetails = await UserModel.findOne({ "$or": [{ email: req.body.email }, { mobileNumber: req.body.mobileNumber }] }).exec();
         if (!retrievedUserDetails) {
             let newUser = new UserModel({
                 userId: nanoId(),
@@ -96,7 +96,7 @@ let signUpFunction = asyncHandler(async (req, res) => {
             let apiResponse = { status: true, description: 'User created', statusCode: 200, data: newUserObj };
             res.send(apiResponse);
         } else {
-            let apiResponse = { status: false, description: 'User Already Present With this Email', statusCode: 403, data: null };
+            let apiResponse = { status: false, description: 'User Already Present With this Email or Mobile number', statusCode: 403, data: null };
             res.send(apiResponse);
         }
     }))

@@ -8,6 +8,8 @@ const config = require('../../config')
 
 const ReelModel = mongoose.model('Reel');
 const UserModel = mongoose.model('User');
+const LikeModel = mongoose.model('Like');
+const CommentModel = mongoose.model('Comment');
 
 let nanoId = nanoid.customAlphabet('0123456789ABCDEFGabcdefg_', 8);
 const fileSizeFormatter = (bytes, decimal) => {
@@ -43,9 +45,10 @@ const uploadReel = asyncHandler(async (req, res) => {
         let newReel = new ReelModel({
             reelId: reelIdGenerated,
             userId: userDetails.userId,
+            caption: req.body.caption,
             fileName: req.file.originalname,
             filePath: path.join(config.directoryPath + '/' + req.file.path),
-            downloadPath: `/download-ree/${reelIdGenerated}`,
+            downloadPath: `/download-reel/${reelIdGenerated}`,
             fileType: req.file.mimetype,
             fileSize: fileSizeFormatter(req.file.size, 4),
             fileSizeBytes: req.file.size
@@ -101,7 +104,7 @@ const downloadReel = asyncHandler(async (req, res) => {
     }))
 })
 
-let getReelsByUser = (asyncHandler(async (req, res) => {
+let getReelsByUser = asyncHandler(async (req, res) => {
     let userDetails = await new Promise(asyncHandler(async (resolve) => {
         if (req.params.userId) {
             let details = await UserModel.findOne({ userId: req.params.userId });
@@ -128,19 +131,140 @@ let getReelsByUser = (asyncHandler(async (req, res) => {
 
     let apiResponse = { status: true, description: 'All reels of this user', statusCode: 200, data: reels }
     res.send(apiResponse)
-}))
+})
 
-let getReels = (asyncHandler(async (req, res) => {
+let getReels = asyncHandler(async (req, res) => {
     let pageNo = parseInt(req.query.pageNo);
     let limit = parseInt(req.query.limit);
     let endKey = null;
     let reelCollection
     if (!req.query.endKey) {
-        reelCollection = await ReelModel.find({})
+        reelCollection = await ReelModel.aggregate(
+            [
+                {
+                    $lookup:
+                    {
+                        from: "likes",
+                        let: { reel_id: "$reelId", flag: true },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            {
+                                                $eq: [
+                                                    "$reelId",
+                                                    "$$reel_id"
+                                                ]
+                                            },
+                                            {
+                                                $eq: [
+                                                    "$liked",
+                                                    "$$flag"
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        ],
+                        as: "likeDetails"
+                    }
+                },
+                {
+                    $lookup:
+                    {
+                        from: "comments",
+                        localField: "reelId",
+                        foreignField: "reelId",
+                        as: "commentDetails"
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        reelId: "$reelId",
+                        userId: "$userId",
+                        caption: "$caption",
+                        fileName: "$fileName",
+                        fileSize: "$fileSize",
+                        fileType: "$fileType",
+                        downloadPath: "$downloadPath",
+                        totalViews: "$view",
+                        totalLikes: { $size: "$likeDetails" },
+                        totalComment: { $size: "$commentDetails" },
+                        createdAt: "$createdAt"
+                    }
+                }
+            ]
+        )
             .sort({ '_id': 1 })
             .limit(limit);
     } else {
-        reelCollection = await ReelModel.find({ _id: { $gt: mongoose.Types.ObjectId(req.query.endKey) } })
+        reelCollection = await ReelModel.aggregate([
+            {
+                $match:
+                {
+                    _id:
+                        { $gt: mongoose.Types.ObjectId(req.query.endKey) }
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "likes",
+                    let: { reel_id: "$reelId", flag: false },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        {
+                                            $eq: [
+                                                "$reelId",
+                                                "$$reel_id"
+                                            ]
+                                        },
+                                        {
+                                            $eq: [
+                                                "$liked",
+                                                "$$flag"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: "likeDetails"
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "comments",
+                    localField: "reelId",
+                    foreignField: "reelId",
+                    as: "commentDetails"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    reelId: "$reelId",
+                    userId: "$userId",
+                    caption: "$caption",
+                    fileName: "$fileName",
+                    fileSize: "$fileSize",
+                    fileType: "$fileType",
+                    downloadPath: "$downloadPath",
+                    totalViews: "$view",
+                    totalLikes: { $size: "$likeDetails" },
+                    totalComment: { $size: "$commentDetails" },
+                    createdAt: "$createdAt"
+                }
+            }
+        ])
             .sort({ '_id': 1 })
             .limit(limit);
     }
@@ -162,11 +286,160 @@ let getReels = (asyncHandler(async (req, res) => {
     let apiResponse = { status: true, description: "reels details", statusCode: 200, data: resposneObj }
     res.send(apiResponse)
 
-}))
+})
+
+let likeReels = asyncHandler(async (req, res) => {
+    await new Promise(asyncHandler(async (resolve) => {
+        let reelDetails = await ReelModel.find({ reelId: req.body.reelId })
+        if (!reelDetails) {
+            let apiResponse = { status: false, description: 'No reel present with this reel id', statusCode: 404, data: [] }
+            res.send(apiResponse)
+        } else {
+            let userDetails = await UserModel.find({ userId: req.body.userId })
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No user present with this user id', statusCode: 404, data: [] }
+                res.send(apiResponse)
+            } else {
+                resolve(reelDetails)
+            }
+        }
+    }))
+
+    let likeResolvedDetails = await new Promise(asyncHandler(async (resolve) => {
+        let likeDetails = await LikeModel.find({ reelId: req.body.reelId, userId: req.body.userId })
+        if (likeDetails.length !== 0) {
+            let updateLikeDetails = await LikeModel.findOneAndUpdate({ reelId: req.body.reelId }, { liked: req.body.liked }, { new: true })
+            resolve(updateLikeDetails)
+        } else {
+            let likeNewDetails = await new LikeModel({
+                reelId: req.body.reelId,
+                userId: req.body.userId,
+                liked: req.body.liked
+            })
+
+            let details = likeNewDetails.save()
+            resolve(details)
+        }
+    }))
+
+    let apiResponse = { status: true, description: 'Like status created', statusCode: 200, data: likeResolvedDetails }
+    res.send(apiResponse)
+})
+
+let getReelLikeByUser = asyncHandler(async (req, res) => {
+    await new Promise(asyncHandler(async (resolve) => {
+        let reelDetails = await ReelModel.find({ reelId: req.query.reelId })
+        if (!reelDetails) {
+            let apiResponse = { status: false, description: 'No reel present with this reel id', statusCode: 404, data: [] }
+            res.send(apiResponse)
+        } else {
+            let userDetails = await UserModel.find({ userId: req.query.userId })
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No user present with this user id', statusCode: 404, data: [] }
+                res.send(apiResponse)
+            } else {
+                resolve(reelDetails)
+            }
+        }
+    }))
+
+    let details = await new Promise(asyncHandler(async (resolve) => {
+        let likeDetails = await LikeModel.find({ reelId: req.query.reelId, userId: req.query.userId })
+        if (!likeDetails) {
+            let apiResponse = { status: false, description: 'User has not liked this reel', statusCode: 404, data: [] }
+            res.send(apiResponse)
+        } else {
+            resolve(likeDetails)
+        }
+    }))
+
+    let apiResponse = { status: true, description: 'like details', statusCode: 200, data: details };
+    res.send(apiResponse)
+})
+
+let viewReels = asyncHandler(async (req, res) => {
+    let reelResolvedDetails = await new Promise(asyncHandler(async (resolve) => {
+        let reelDetails = await ReelModel.findOne({ reelId: req.query.reelId })
+        if (!reelDetails) {
+            let apiResponse = { status: false, description: 'No reel present with this reel id', statusCode: 404, data: [] }
+            res.send(apiResponse)
+        } else {
+            let userDetails = await UserModel.findOne({ userId: req.query.userId })
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No user present with this user id', statusCode: 404, data: [] }
+                res.send(apiResponse)
+            } else {
+                resolve(reelDetails)
+            }
+        }
+    }))
+    let viewDetails = await new Promise(asyncHandler(async (resolve) => {
+        let details = await ReelModel.findOneAndUpdate({ reelId: reelResolvedDetails.reelId }, { $inc: { view: 1 } }, { new: true }).select('-_id -__v -filePath')
+        resolve(details)
+    }))
+
+    let apiResponse = { status: true, description: 'View details updated', statusCode: 200, data: viewDetails };
+    res.send(apiResponse)
+})
+
+let commentReel = asyncHandler(async (req, res) => {
+    let reelDetails = await new Promise(asyncHandler(async (resolve) => {
+        let reelDetails = await ReelModel.findOne({ reelId: req.body.reelId })
+        if (!reelDetails) {
+            let apiResponse = { status: false, description: 'No reel present with this reel id', statusCode: 404, data: [] }
+            res.send(apiResponse)
+        } else {
+            let userDetails = await UserModel.findOne({ userId: req.body.userId })
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No user present with this user id', statusCode: 404, data: [] }
+                res.send(apiResponse)
+            } else {
+                resolve(reelDetails)
+            }
+        }
+    }))
+
+    let commentResolvedDetails = await new Promise(asyncHandler(async (resolve) => {
+        let commentDetails = await CommentModel.find({ reelId: reelDetails.reelId, userId: reelDetails.userId });
+        if (commentDetails.length !== 0) {
+            let updateComment = await CommentModel.findOneAndUpdate({ reelId: reelDetails.reelId, userId: reelDetails.userId }, { comment: req.body.comment }, { new: true })
+            resolve({ data: updateComment, desc: "Comment Updated Successfully" })
+        } else {
+            let newComment = await new CommentModel({
+                commentId: nanoId(),
+                reelId: reelDetails.reelId,
+                userId: reelDetails.userId,
+                comment: req.body.comment
+            })
+
+            let commentNewDetails = await newComment.save()
+            resolve({ data: commentNewDetails, desc: "Comment Created Successfully" })
+        }
+    }))
+
+    let apiResponse = { status: true, description: commentResolvedDetails.desc, statusCode: 200, data: commentResolvedDetails.data };
+    res.send(apiResponse)
+})
+
+let getAllCommentsByReel = asyncHandler(async (req, res) => {
+    let commentDetails = await CommentModel.find({ reelId: req.params.reelId })
+    if (!commentDetails) {
+        let apiResponse = { status: false, description: 'No comments present with this reel id', statusCode: 404, data: [] }
+        res.send(apiResponse)
+    } else {
+        let apiResponse = { status: true, description: 'All Comment Details', statusCode: 200, data: commentDetails }
+        res.send(apiResponse)
+    }
+})
 
 module.exports = {
     uploadReel,
     downloadReel,
     getReels,
-    getReelsByUser
+    getReelsByUser,
+    likeReels,
+    getReelLikeByUser,
+    viewReels,
+    commentReel,
+    getAllCommentsByReel
 }
