@@ -174,6 +174,36 @@ let getReels = asyncHandler(async (req, res) => {
                 {
                     $lookup:
                     {
+                        from: "likes",
+                        let: { reel_id: "$reelId", user_id: "$userId" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            {
+                                                $eq: [
+                                                    "$reelId",
+                                                    "$$reel_id"
+                                                ]
+                                            },
+                                            {
+                                                $eq: [
+                                                    "$userId",
+                                                    "$$user_id"
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        ],
+                        as: "likeDetailsAsUser"
+                    }
+                },
+                {
+                    $lookup:
+                    {
                         from: "comments",
                         localField: "reelId",
                         foreignField: "reelId",
@@ -186,6 +216,7 @@ let getReels = asyncHandler(async (req, res) => {
                         reelId: "$reelId",
                         userId: "$userId",
                         caption: "$caption",
+                        isLiked: { $arrayElemAt: ["$likeDetailsAsUser.liked", 0] },
                         fileName: "$fileName",
                         fileSize: "$fileSize",
                         fileType: "$fileType",
@@ -242,6 +273,36 @@ let getReels = asyncHandler(async (req, res) => {
             {
                 $lookup:
                 {
+                    from: "likes",
+                    let: { reel_id: "$reelId", user_id: "$userId" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        {
+                                            $eq: [
+                                                "$reelId",
+                                                "$$reel_id"
+                                            ]
+                                        },
+                                        {
+                                            $eq: [
+                                                "$userId",
+                                                "$$user_id"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: "likeDetailsAsUser"
+                }
+            },
+            {
+                $lookup:
+                {
                     from: "comments",
                     localField: "reelId",
                     foreignField: "reelId",
@@ -290,12 +351,12 @@ let getReels = asyncHandler(async (req, res) => {
 
 let likeReels = asyncHandler(async (req, res) => {
     await new Promise(asyncHandler(async (resolve) => {
-        let reelDetails = await ReelModel.find({ reelId: req.body.reelId })
+        let reelDetails = await ReelModel.findOne({ reelId: req.body.reelId })
         if (!reelDetails) {
             let apiResponse = { status: false, description: 'No reel present with this reel id', statusCode: 404, data: [] }
             res.send(apiResponse)
         } else {
-            let userDetails = await UserModel.find({ userId: req.body.userId })
+            let userDetails = await UserModel.findOne({ userId: req.body.userId })
             if (!userDetails) {
                 let apiResponse = { status: false, description: 'No user present with this user id', statusCode: 404, data: [] }
                 res.send(apiResponse)

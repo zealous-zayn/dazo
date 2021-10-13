@@ -85,6 +85,7 @@ let signUpFunction = asyncHandler(async (req, res) => {
                 userId: nanoId(),
                 firstName: req.body.firstName,
                 lastName: req.body.lastName || '',
+                gender: req.body.gender.toLowerCase(),
                 email: req.body.email.toLowerCase(),
                 mobileNumber: req.body.mobileNumber.length == 10 ? req.body.mobileNumber :
                     (function () { throw new Error("invalid mobile nummber ") }()),
