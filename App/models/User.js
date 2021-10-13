@@ -25,9 +25,6 @@ let userSchema = mongoose.Schema({
     },
     mobileNumber: {
         type: Number
-    },
-    otp: {
-        type: Number
     }
 }, { timestamps: true })
 

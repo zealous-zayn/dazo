@@ -4,6 +4,7 @@ const asyncHandler = require('express-async-handler');
 
 const passwordLib = require('./../libs/generatePasswordLib');
 const validateInput = require('./../libs/paramValidation');
+const twilioApi = require('../libs/twilioSmsLib');
 
 const UserModel = mongoose.model('User');
 
@@ -156,20 +157,11 @@ let generateOtp = asyncHandler(async (req, res) => {
     }))
 
     let details = await new Promise(asyncHandler(async (resolve) => {
-        let otpGenerated = otpGenerator()
-        let userDetailsWithUpdatedOtp = await UserModel.findOneAndUpdate({ mobileNumber: req.params.mobileNumber },
-            { otp: otpGenerated },
-            {
-                "fields": { "userId": 1, "firstName": 1, "lastName": 1, "email": 1, "otp": 1 },
-                "new": true
-            });
-
-        resolve(userDetailsWithUpdatedOtp)
-        setTimeout(async () => {
-            await UserModel.findOneAndUpdate({ mobileNumber: req.params.mobileNumber },
-                { otp: otpGenerator() })
-            console.log("OTP resetted")
-        }, 120000)
+        let userDetails = await UserModel.findOne({ mobileNumber: req.params.mobileNumber }).select('-__v -password -_id');
+        let createOtp = await twilioApi.createTwilioOtp(`+91${req.params.mobileNumber}`)
+        let userDetailsObj = userDetails.toObject()
+        userDetailsObj.twilioSid = createOtp.serviceSid;
+        resolve(userDetailsObj)
     }))
     let apiResponse = { status: true, description: 'OTP sent succesfully', statusCode: 200, data: details }
     res.send(apiResponse)
@@ -191,9 +183,10 @@ let verifyOtp = (asyncHandler(async (req, res) => {
             res.send(apiResponse)
         }
     }))
-    if (retrievedUserDetails.otp === parseInt(req.body.otp)) {
-        await UserModel.findOneAndUpdate({ userId: retrievedUserDetails.userId }, { otp: otpGenerator() })
-        let apiResponse = { status: true, description: 'OTP sent succesfully', statusCode: 200, data: retrievedUserDetails }
+    let otpVerifyDetails = await twilioApi.verifyTwilioOtp(`+91${retrievedUserDetails.mobileNumber}`, req.body.otp, req.body.twilioSid)
+    console.log(otpVerifyDetails)
+    if (otpVerifyDetails.status === 'approved') {
+        let apiResponse = { status: true, description: 'OTP verified succesfully', statusCode: 200, data: retrievedUserDetails }
         res.send(apiResponse)
     } else {
         let apiResponse = { status: false, description: 'Incorrect OTP or OTP may expire', statusCode: 200, data: null }
