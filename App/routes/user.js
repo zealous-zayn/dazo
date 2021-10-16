@@ -14,4 +14,6 @@ module.exports.setRouter = (app) => {
     app.get('/generate-otp/:mobileNumber', userController.generateOtp);
 
     app.post('/verify-otp', userController.verifyOtp);
+
+    app.get('/delete-user/:userId', userController.deleteUser)
 }

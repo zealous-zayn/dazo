@@ -195,6 +195,27 @@ let verifyOtp = (asyncHandler(async (req, res) => {
 
 }))
 
+let deleteUser = asyncHandler(async (req, res) => {
+    let retrievedUserDetails = await new Promise(asyncHandler(async (resolve) => {
+        if (req.body.userId) {
+            let userDetails = await UserModel.findOne({ userId: req.params.userId }).select('-password -__v -_id').lean()
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No Details Found or Your have not registered yet', statusCode: 404, data: null };
+                res.send(apiResponse)
+            } else {
+                resolve(userDetails)
+            }
+        } else {
+            let apiResponse = { status: false, description: '"userId" parameter is missing', statusCode: 400, data: null }
+            res.send(apiResponse)
+        }
+    }))
+
+    let details = await UserModel.findOneAndDelete({ userId: retrievedUserDetails.userId })
+    let apiResponse = { status: true, description: 'user deleted successfully', statusCode: 200, data: details };
+    res.send(apiResponse)
+})
+
 module.exports = {
     getAllUser,
     getSingleUser,
@@ -202,5 +223,6 @@ module.exports = {
     signUpFunction,
     loginFunction,
     generateOtp,
-    verifyOtp
+    verifyOtp,
+    deleteUser
 }
