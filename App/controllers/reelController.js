@@ -175,7 +175,7 @@ let getReels = asyncHandler(async (req, res) => {
                     $lookup:
                     {
                         from: "likes",
-                        let: { reel_id: "$reelId", user_id: "$userId" },
+                        let: { reel_id: "$reelId", user_id: req.query.userId },
                         pipeline: [
                             {
                                 $match: {
@@ -216,7 +216,15 @@ let getReels = asyncHandler(async (req, res) => {
                         reelId: "$reelId",
                         userId: "$userId",
                         caption: "$caption",
-                        isLiked: { $arrayElemAt: ["$likeDetailsAsUser.liked", 0] },
+                        isLiked: {
+                            $cond: {
+                                if: {
+                                    $eq: [{ $size: "$likeDetailsAsUser" }, 0],
+                                },
+                                then: false,
+                                else: { $arrayElemAt: ["$likeDetailsAsUser.liked", 0] }
+                            }
+                        },
                         fileName: "$fileName",
                         fileSize: "$fileSize",
                         fileType: "$fileType",
@@ -274,7 +282,7 @@ let getReels = asyncHandler(async (req, res) => {
                 $lookup:
                 {
                     from: "likes",
-                    let: { reel_id: "$reelId", user_id: "$userId" },
+                    let: { reel_id: "$reelId", user_id: req.query.userId },
                     pipeline: [
                         {
                             $match: {
@@ -315,6 +323,15 @@ let getReels = asyncHandler(async (req, res) => {
                     reelId: "$reelId",
                     userId: "$userId",
                     caption: "$caption",
+                    isLiked: {
+                        $cond: {
+                            if: {
+                                $eq: [{ $size: "$likeDetailsAsUser" }, 0],
+                            },
+                            then: false,
+                            else: { $arrayElemAt: ["$likeDetailsAsUser.liked", 0] }
+                        }
+                    },
                     fileName: "$fileName",
                     fileSize: "$fileSize",
                     fileType: "$fileType",
@@ -339,7 +356,7 @@ let getReels = asyncHandler(async (req, res) => {
 
     let resposneObj = {
         reels: reelCollection,
-        nextUrl: pageNo !== totalPages ? `/download-reel/?pageNo=${pageNo + 1}&limit=${limit}&endKey=${endKey}` : null,
+        nextUrl: pageNo !== totalPages ? `/download-reel/?userId=${req.query.userId}&pageNo=${pageNo + 1}&limit=${limit}&endKey=${endKey}` : null,
         nextPage: pageNo !== totalPages,
         totalPages: totalPages
     }
