@@ -17,9 +17,13 @@ socket.on("getLiveUser", (result) => {
   for (let k in result) {
     console.log(!document.getElementById(k))
     if (!document.getElementById(k) && result[k] !== username) {
-      liveUserDiv.innerHTML += `<a id=${k} href="/view/${result[k]}/${k}">${result[k]}</a>`
+      liveUserDiv.innerHTML += `<a id=${k} href="/view/${result[k]}/${k}/${username}">${result[k]}</a>`
     }
   }
+})
+
+socket.on('live-msg', (msgObj) => {
+  console.log(msgObj.from + " : " + msgObj.msg)
 })
 
 socket.on("watcher", id => {

@@ -10,10 +10,15 @@
 <body>
   <video playsinline autoplay muted></video>
   <button id="enable-audio">Enable audio</button>
+
+  <input id="inputField" type="text" />
+  <input id="myButton" type="submit" value="Send" />
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
     let liveUserName = '<%= userName%>';
-    let liveUserId = '<%= socketId%>'
+    let liveUserId = '<%= socketId%>';
+    let viewUser = '<%= viewUser%>';
   </script>
   <script src="/watch.js"></script>
 </body>

@@ -3,7 +3,7 @@ module.exports.setRouter = (app) => {
         res.render(`broadcast`);
     });
 
-    app.get("/view/:username/:socketid", (req, res) => {
-        res.render(`index`, { userName: req.params.username, socketId: req.params.socketid });
+    app.get("/view/:username/:socketid/:viewUser", (req, res) => {
+        res.render(`index`, { userName: req.params.username, socketId: req.params.socketid, viewUser: req.params.viewUser });
     });
 }

@@ -38,6 +38,12 @@ module.exports.setSocketServer = (server) => {
             })
         })
 
+        socket.on('message', (liveUser, id, msgObj) => {
+            console.log(msgObj)
+            socket.broadcast.emit(`${liveUser}-msg`, msgObj)
+            socket.to(id).emit('live-msg', msgObj)
+        })
+
         socket.on('viewer', (name, id) => {
             console.log(name)
             io.sockets.emit(`${name}`, id)

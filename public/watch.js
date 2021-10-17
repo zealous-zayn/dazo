@@ -9,7 +9,10 @@ const socket = io.connect("https://3.108.60.176.nip.io");
 const video = document.querySelector("video");
 const enableAudioButton = document.querySelector("#enable-audio");
 
+const sendButton = document.querySelector("#myButton");
+
 enableAudioButton.addEventListener("click", enableAudio)
+sendButton.addEventListener("click", sendMessage)
 
 socket.on("offer", (id, description) => {
   peerConnection = new RTCPeerConnection(config);
@@ -49,6 +52,10 @@ socket.on(liveUserName, (id) => {
   socket.emit("watcher", id);
 });
 
+socket.on(`${liveUserName}-msg`, (msgObj) => {
+  console.log(msgObj.from + " : " + msgObj.msg)
+})
+
 window.onunload = window.onbeforeunload = () => {
   socket.close();
   peerConnection.close();
@@ -57,4 +64,10 @@ window.onunload = window.onbeforeunload = () => {
 function enableAudio() {
   console.log("Enabling audio")
   video.muted = false;
+}
+
+function sendMessage() {
+  let msgValue = document.querySelector('#inputField').value
+  console.log(msgValue)
+  socket.emit('message', liveUserName, liveUserId, { from: viewUser, msg: msgValue })
 }
