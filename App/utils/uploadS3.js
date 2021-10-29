@@ -9,7 +9,8 @@ let uploadFile = async (req, res) => {
         secretAccessKey: config.awsSecret,
     });
     let params
-    if (path.extname(req.file.originalname).toLowerCase() === 'mp4') {
+    console.log(/mp4/.test(path.extname(req.file.originalname).toLowerCase()))
+    if (/mp4/.test(path.extname(req.file.originalname).toLowerCase())) {
         params = {
             Bucket: "dazolive", //Bucket Name
             Key: req.body.userId + '-' + new Date().toISOString().replace(/:/g, '_') + '-' + req.file.originalname.replace(/\s/g, '-'),
@@ -28,6 +29,8 @@ let uploadFile = async (req, res) => {
         };
 
     }
+
+    console.log(params)
 
     let s3UploadDetails = await new Promise((resolve) => {
         s3bucket.upload(params, (err, result) => {
