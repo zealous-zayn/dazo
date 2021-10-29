@@ -2,9 +2,8 @@ const mongoose = require('mongoose');
 const nanoid = require('nanoid');
 const asyncHandler = require('express-async-handler');
 const fs = require('fs');
-const path = require('path');
 
-const config = require('../../config')
+const utils = require('../utils/uploadS3');
 
 const ReelModel = mongoose.model('Reel');
 const UserModel = mongoose.model('User');
@@ -30,16 +29,17 @@ const uploadReel = asyncHandler(async (req, res) => {
             if (!details) {
                 let apiResponse = { status: false, description: 'No user found with this user Id', statusCode: 200, data: null }
                 res.send(apiResponse)
-                fs.unlinkSync(path.join(config.directoryPath + '/' + req.file.path))
             } else {
                 resolve(details)
             }
         } else {
             let apiResponse = { status: false, description: '"userId" is missing', statusCode: 200, data: null }
             res.send(apiResponse)
-            fs.unlinkSync(path.join(config.directoryPath + '/' + req.file.path))
         }
     }))
+
+    let mediaConvertDetails = await utils.mediaConvert(req, res)
+
     await new Promise(asyncHandler(async (resolve) => {
         let reelIdGenerated = nanoId();
         let newReel = new ReelModel({
@@ -47,8 +47,8 @@ const uploadReel = asyncHandler(async (req, res) => {
             userId: userDetails.userId,
             caption: req.body.caption,
             fileName: req.file.originalname,
-            filePath: path.join(config.directoryPath + '/' + req.file.path),
-            downloadPath: `/download-reel/${reelIdGenerated}`,
+            filePath: mediaConvertDetails.Job.FilePath,
+            downloadPath: mediaConvertDetails.Job.PlaybackURL,
             fileType: req.file.mimetype,
             fileSize: fileSizeFormatter(req.file.size, 4),
             fileSizeBytes: req.file.size

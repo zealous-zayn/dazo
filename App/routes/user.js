@@ -1,4 +1,5 @@
 const userController = require('./../controllers/userController');
+const { upload } = require('./../middlewares/multer');
 
 module.exports.setRouter = (app) => {
     app.get('/get-all-users', userController.getAllUser);
@@ -15,5 +16,7 @@ module.exports.setRouter = (app) => {
 
     app.post('/verify-otp', userController.verifyOtp);
 
-    app.get('/delete-user/:userId', userController.deleteUser)
+    app.get('/delete-user/:userId', userController.deleteUser);
+
+    app.post('/upload-profile-pic', upload.single('profilePic'), userController.uploadProfilePic)
 }

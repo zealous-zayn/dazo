@@ -17,6 +17,9 @@ let userSchema = mongoose.Schema({
     gender: {
         type: String,
     },
+    profilePic: {
+        type: String
+    },
     password: {
         type: String
     },

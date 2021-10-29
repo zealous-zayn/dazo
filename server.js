@@ -4,7 +4,6 @@ const fs = require('fs');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 
-
 const socketServer = require('./App/libs/socket');
 const appConfig = require('./config');
 const globalErrorMiddleware = require('./App/middlewares/appErrorHandler');

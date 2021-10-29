@@ -5,6 +5,7 @@ const asyncHandler = require('express-async-handler');
 const passwordLib = require('./../libs/generatePasswordLib');
 const validateInput = require('./../libs/paramValidation');
 const twilioApi = require('../libs/twilioSmsLib');
+const utils = require('../utils/uploadS3');
 
 const UserModel = mongoose.model('User');
 
@@ -216,6 +217,35 @@ let deleteUser = asyncHandler(async (req, res) => {
     res.send(apiResponse)
 })
 
+let uploadProfilePic = asyncHandler(async (req, res) => {
+    let retrievedUserDetails = await new Promise(asyncHandler(async (resolve) => {
+        if (req.body.userId) {
+            let userDetails = await UserModel.findOne({ userId: req.body.userId }).select('-password -__v -_id').lean()
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No Details Found or Your have not registered yet', statusCode: 404, data: null };
+                res.send(apiResponse)
+            } else {
+                resolve(userDetails)
+            }
+        } else {
+            let apiResponse = { status: false, description: '"userId" parameter is missing', statusCode: 400, data: null }
+            res.send(apiResponse)
+        }
+    }))
+
+    await new Promise(asyncHandler(async () => {
+        let uploadDetails = await utils.uploadFile(req, res)
+        let result = await UserModel.findOneAndUpdate({ 'userId': retrievedUserDetails.userId }, { profilePic: uploadDetails.Location }, { new: true }).exec()
+        if (!result) {
+            let apiResponse = { status: false, description: 'No User Found', statusCode: 404, data: null }
+            res.send(apiResponse);
+        } else {
+            let apiResponse = { status: true, description: 'User details edited', statusCode: 200, data: result }
+            res.send(apiResponse);
+        }
+    }))
+})
+
 module.exports = {
     getAllUser,
     getSingleUser,
@@ -224,5 +254,6 @@ module.exports = {
     loginFunction,
     generateOtp,
     verifyOtp,
-    deleteUser
+    deleteUser,
+    uploadProfilePic
 }
