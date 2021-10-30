@@ -6,7 +6,7 @@ const config = {
 const liveUserDiv = document.getElementById('liveuser')
 const username = prompt("Enter username without space")
 
-const socket = io.connect("https://3.108.60.176.nip.io");
+const socket = io.connect(window.location.origin);
 
 socket.on("answer", (id, description) => {
   peerConnections[id].setRemoteDescription(description);
@@ -118,7 +118,7 @@ function gotStream(stream) {
     option => option.text === stream.getVideoTracks()[0].label
   );
   videoElement.srcObject = stream;
-  socket.emit("broadcaster", username);
+  socket.emit("broadcaster", username, `{userId: ${username}, token:"sometoken", pic:"somepic"}`);
   socket.emit("getLiveUser")
 }
 
