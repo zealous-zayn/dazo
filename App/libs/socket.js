@@ -13,17 +13,18 @@ module.exports.setSocketServer = (server) => {
     io.on('error', e => console.log(e))
 
     io.on("connection", socket => {
-        socket.on("broadcaster", (name) => {
+        socket.on("broadcaster", (userId, userData) => {
+            console.log(userData)
             let broadcaster = socket.id;
-            redisLib.setANewLiveUserInHash('liveuser', broadcaster, name, (err, result) => {
+            redisLib.setANewLiveUserInHash('liveuser', userId,userData, (err, result) => {
                 if (err) {
                     console.log(`some error occurred while setting user in redis`)
                     console.log(err)
                 }
-
+                console.log(`${userId} has been set in cache`)
                 console.log(result)
             })
-            socket.broadcast.emit("broadcaster", socket.id);
+            socket.broadcast.emit("getLiveUser", userData);
         });
 
         socket.on("getLiveUser", () => {
