@@ -20,5 +20,7 @@ module.exports.setRouter = (app) => {
 
     app.post('/upload-profile-pic', upload.single('profilePic'), userController.uploadProfilePic);
 
-    app.post('/add-follower', userController.addFollower)
+    app.post('/add-follower', userController.addFollower);
+
+    app.post('/un-follow', userController.unfollow);
 }

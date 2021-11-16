@@ -145,7 +145,7 @@ let loginFunction = asyncHandler((async (req, res) => {
             delete retrievedUserDetailsObj.__v
             resolve(retrievedUserDetailsObj)
         } else {
-            let apiResponse = { statuus: false, description: 'Wrong Password.Login Failed', statusCode: 400, data: null };
+            let apiResponse = { status: false, description: 'Wrong Password.Login Failed', statusCode: 400, data: null };
             res.send(apiResponse)
         }
     }))
@@ -323,7 +323,7 @@ let addFollower = asyncHandler(async(req,res)=>{
                 resolve(userDetails)
             }
         } else {
-            let apiResponse = { status: false, description: '"userId" parameter is missing', statusCode: 400, data: null }
+            let apiResponse = { status: false, description: '"toFollowUserId" parameter is missing', statusCode: 400, data: null }
             res.send(apiResponse)
         }
     }));
@@ -354,7 +354,46 @@ let addFollower = asyncHandler(async(req,res)=>{
             delete obj.__v
             let apiResponse = { status: true, description: 'followed successfully', statusCode: 200, data: obj };
             res.send(apiResponse);
-    }))
+    }));
+
+});
+
+let unfollow = asyncHandler(async (req,res)=>{
+    let retrievedUserDetails = await new Promise(asyncHandler(async (resolve) => {
+        if (req.body.userId) {
+            let userDetails = await UserModel.findOne({ userId: req.body.userId }).select('-password -__v -_id').lean()
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No Details Found or Your have not registered yet', statusCode: 404, data: null };
+                res.send(apiResponse)
+            } else {
+                resolve(userDetails)
+            }
+        } else {
+            let apiResponse = { status: false, description: '"userId" parameter is missing', statusCode: 400, data: null }
+            res.send(apiResponse)
+        }
+    }));
+
+    let retrievedToUnFollowUserDetails = await new Promise(asyncHandler(async (resolve) => {
+        if (req.body.toUnFollowUserId) {
+            let userDetails = await UserModel.findOne({ userId: req.body.toUnFollowUserId }).select('-password -__v -_id').lean()
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No Details Found for user to whom you want to follow', statusCode: 404, data: null };
+                res.send(apiResponse)
+            } else {
+                resolve(userDetails)
+            }
+        } else {
+            let apiResponse = { status: false, description: '"toUnFollowUserId" parameter is missing', statusCode: 400, data: null }
+            res.send(apiResponse)
+        }
+    }));
+
+    await FollowingModel.findOneAndDelete({userId:retrievedUserDetails.userId, followingId:retrievedToUnFollowUserDetails.userId});
+    await FollowerModel.findOneAndDelete({userId:retrievedToUnFollowUserDetails.userId, followerId:retrievedUserDetails.userId});
+    retrievedToUnFollowUserDetails.isFollowing = false
+    let apiResponse = {status:true, description:"unfollowed successfully", statusCode: 200, data: retrievedToUnFollowUserDetails};
+    res.send(apiResponse);
 })
 
 module.exports = {
@@ -369,5 +408,6 @@ module.exports = {
     uploadProfilePic,
     makePayment,
     successPayment,
-    addFollower
+    addFollower,
+    unfollow
 }
