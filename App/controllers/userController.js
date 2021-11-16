@@ -6,8 +6,12 @@ const passwordLib = require('./../libs/generatePasswordLib');
 const validateInput = require('./../libs/paramValidation');
 const twilioApi = require('../libs/twilioSmsLib');
 const utils = require('../utils/uploadS3');
+const paymentService = require('./../services/payu');
 
 const UserModel = mongoose.model('User');
+const PackageModel = mongoose.model('Package');
+const FollowerModel = mongoose.model('Follower');
+const FollowingModel = mongoose.model('Following')
 
 let nanoId = nanoid.customAlphabet('0123456789ABCDEFGabcdefg_', 8);
 
@@ -38,11 +42,16 @@ let getAllUser = asyncHandler(async (req, res) => {
 })// end get all users
 
 let getSingleUser = asyncHandler(async (req, res) => {
-    const result = await UserModel.findOne({ 'userId': req.params.userId }).select('-password -__v -_id').lean().exec();
+    const result = await UserModel.findOne({ 'userId': req.params.getUserId }).select('-password -__v -_id -totalCoins -mobileNumber -email').lean().exec();
     if (!result) {
         let apiResponse = { status: false, description: 'No User Found', statusCode: 404, data: null };
         res.send(apiResponse)
     } else {
+        let followerCount = await FollowerModel.countDocuments({userId : req.params.getUserId});
+        let followingCount = await FollowingModel.countDocuments({userId: req.params.getUserId});
+        result.totalFollower = followerCount;
+        result.totalFollowing = followingCount;
+        result.isFollowing = await FollowingModel.findOne({userId:req.params.fromUserId, followingId: req.params.getUserId}) ? true : false;
         let apiResponse = { status: true, description: 'User Details Found', statusCode: 200, data: result }
         res.send(apiResponse)
     }
@@ -126,8 +135,11 @@ let loginFunction = asyncHandler((async (req, res) => {
         let isMatch = await passwordLib.comparePassword(req.body.password, retrievedUserDetails.password)
 
         if (isMatch) {
-            let retrievedUserDetailsObj = retrievedUserDetails.toObject()
-            delete retrievedUserDetailsObj.password
+            let followerCount = await FollowerModel.countDocuments({userId : retrievedUserDetails.userId});
+            let followingCount = await FollowingModel.countDocuments({userId: retrievedUserDetails.userId});
+            let retrievedUserDetailsObj = retrievedUserDetails.toObject();
+            retrievedUserDetailsObj.totalFollower = followerCount;
+            retrievedUserDetailsObj.totalFollowing = followingCount;
             delete retrievedUserDetailsObj._id
             delete retrievedUserDetailsObj.otp
             delete retrievedUserDetailsObj.__v
@@ -246,6 +258,105 @@ let uploadProfilePic = asyncHandler(async (req, res) => {
     }))
 })
 
+let makePayment = asyncHandler(async(req,res)=>{
+    let retrievedUserDetails = await new Promise(asyncHandler(async (resolve) => {
+        if (req.body.userId) {
+            let userDetails = await UserModel.findOne({ userId: req.body.userId }).select('-password -__v -_id').lean()
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No Details Found or Your have not registered yet', statusCode: 404, data: null };
+                res.send(apiResponse)
+            } else {
+                resolve(userDetails)
+            }
+        } else {
+            let apiResponse = { status: false, description: '"userId" parameter is missing', statusCode: 400, data: null }
+            res.send(apiResponse)
+        }
+    }));
+
+    await new Promise(asyncHandler(async(resolve)=>{
+        let packageDetails = await PackageModel.findOne({packageId:req.body.packageId});
+        let data = {
+            firstName: retrievedUserDetails.firstName,
+            email: retrievedUserDetails.email,
+            phone: retrievedUserDetails.mobileNumber,
+            amount: packageDetails.amount,
+            userId: retrievedUserDetails.userId,
+            packageId: packageDetails.packageId
+        };
+        let paymentLink = await paymentService.paymentMethod(data);
+        let apiResponse = {status: true, description: "payment link generated", statusCode: 200, link: paymentLink};
+        res.send(apiResponse);
+    }));
+});
+
+let successPayment = asyncHandler(async(req,res)=>{
+    let packageDetails = await PackageModel.findOne({packageId: req.query.packageId});
+    let userDetails = await UserModel.findOneAndUpdate({userId: req.query.userId},{$inc : {totalCoins: packageDetails.numberOfCoins}}, {new: true});
+    let apiResponse = {status: true, description: "payment success response", statusCode: 200, data: {totalNumberOfCoins: userDetails.totalCoins}}
+    res.send(apiResponse)
+})
+
+let addFollower = asyncHandler(async(req,res)=>{
+    let retrievedUserDetails = await new Promise(asyncHandler(async (resolve) => {
+        if (req.body.userId) {
+            let userDetails = await UserModel.findOne({ userId: req.body.userId }).select('-password -__v -_id').lean()
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No Details Found or Your have not registered yet', statusCode: 404, data: null };
+                res.send(apiResponse)
+            } else {
+                resolve(userDetails)
+            }
+        } else {
+            let apiResponse = { status: false, description: '"userId" parameter is missing', statusCode: 400, data: null }
+            res.send(apiResponse)
+        }
+    }));
+
+    let retrievedToFollowUserDetails = await new Promise(asyncHandler(async (resolve) => {
+        if (req.body.toFollowUserId) {
+            let userDetails = await UserModel.findOne({ userId: req.body.toFollowUserId }).select('-password -__v -_id').lean()
+            if (!userDetails) {
+                let apiResponse = { status: false, description: 'No Details Found for user to whom you want to follow', statusCode: 404, data: null };
+                res.send(apiResponse)
+            } else {
+                resolve(userDetails)
+            }
+        } else {
+            let apiResponse = { status: false, description: '"userId" parameter is missing', statusCode: 400, data: null }
+            res.send(apiResponse)
+        }
+    }));
+
+    await new Promise(asyncHandler(async (resolve)=>{
+        let newFollowerDetails = new FollowerModel({
+            userId: req.body.toFollowUserId,
+            followerId: retrievedUserDetails.userId,
+            followerName: retrievedUserDetails.firstName + ' ' + retrievedUserDetails.lastName,
+            followerPic: retrievedUserDetails.profilePic 
+        })
+
+        await newFollowerDetails.save();
+
+        let newFollowingDetails = new FollowingModel({
+            userId: req.body.userId,
+            followingId: retrievedToFollowUserDetails.userId,
+            followingName: retrievedToFollowUserDetails.firstName + ' ' + retrievedToFollowUserDetails.lastName,
+            followingPic: retrievedToFollowUserDetails.profilePic
+        })
+
+        await newFollowingDetails.save();
+        let obj = retrievedToFollowUserDetails;
+        obj.isFollowing = true;
+        delete obj.password
+            delete obj._id
+            delete obj.otp
+            delete obj.__v
+            let apiResponse = { status: true, description: 'followed successfully', statusCode: 200, data: obj };
+            res.send(apiResponse);
+    }))
+})
+
 module.exports = {
     getAllUser,
     getSingleUser,
@@ -255,5 +366,8 @@ module.exports = {
     generateOtp,
     verifyOtp,
     deleteUser,
-    uploadProfilePic
+    uploadProfilePic,
+    makePayment,
+    successPayment,
+    addFollower
 }

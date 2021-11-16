@@ -1,5 +1,4 @@
-const config = require('../../config')
-const clinet = require('twilio')(config.accountSid, config.authToken);
+const clinet = require('twilio')(process.env.accountSid, process.env.authToken);
 
 module.exports.createTwilioOtp = async (mobileNumber) => {
     let verifyDetails = await clinet.verify.services.create({ friendlyName: 'Dazo Live OTP', codeLength: 4 })

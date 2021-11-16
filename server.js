@@ -3,9 +3,9 @@ const express = require('express');
 const fs = require('fs');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
+require('dotenv').config()
 
 const socketServer = require('./App/libs/socket');
-const appConfig = require('./config');
 const globalErrorMiddleware = require('./App/middlewares/appErrorHandler');
 
 const app = express();
@@ -42,7 +42,7 @@ app.use(globalErrorMiddleware.globalNotFoundHandler)
 app.use(globalErrorMiddleware.globalErrorHandler);
 const server = http.createServer(app);
 // start listening to http server
-server.listen(appConfig.port);
+server.listen(process.env.port);
 server.on('error', onError);
 server.on('listening', onListening);
 
@@ -77,7 +77,7 @@ function onListening() {
         : 'port ' + addr.port;
     ('Listening on ' + bind);
     console.log('server listening on port ' + addr.port);
-    mongoose.connect(appConfig.db.uri, (err) => {
+    mongoose.connect(process.env.dbUri, (err) => {
         if (err) {
             console.log(err)
         }

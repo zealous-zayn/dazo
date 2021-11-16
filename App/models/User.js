@@ -28,6 +28,10 @@ let userSchema = mongoose.Schema({
     },
     mobileNumber: {
         type: Number
+    },
+    totalCoins: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true })
 

@@ -4,7 +4,7 @@ const { upload } = require('./../middlewares/multer');
 module.exports.setRouter = (app) => {
     app.get('/get-all-users', userController.getAllUser);
 
-    app.get('/get-single-user/:userId', userController.getSingleUser);
+    app.get('/get-single-user/:getUserId/:fromUserId', userController.getSingleUser);
 
     app.post('/edit-user', userController.editUser);
 
@@ -18,5 +18,7 @@ module.exports.setRouter = (app) => {
 
     app.get('/delete-user/:userId', userController.deleteUser);
 
-    app.post('/upload-profile-pic', upload.single('profilePic'), userController.uploadProfilePic)
+    app.post('/upload-profile-pic', upload.single('profilePic'), userController.uploadProfilePic);
+
+    app.post('/add-follower', userController.addFollower)
 }
