@@ -7,6 +7,7 @@ let nanoId = nanoid.customAlphabet('0123456789ABCDEFGabcdefg', 8);
 module.exports.paymentMethod =  (data) => {
     //Here save all the details in pay object
     return new Promise((resolve,reject)=>{
+      let baseUrl = 'http://3.141.17.6:3000'
       const pay = {
         txnid : nanoId(),
         amount : parseFloat(data.amount),
@@ -39,8 +40,8 @@ module.exports.paymentMethod =  (data) => {
     //We have to additionally pass merchant key to API
   
     pay.key = "WjXg6s"; //store in in different file;
-    pay.surl = `${process.env.baseUrl}/payment/success?userId=${data.userId}&packageId=${data.packageId}`;
-    pay.furl = `${process.env.baseUrl}/payment/fail`;
+    pay.surl = `${baseUrl}/payment/success?userId=${data.userId}&packageId=${data.packageId}`;
+    pay.furl = `${baseUrl}/payment/fail`;
     pay.salt = 'GkrD8713vSzKHzTDM7V9ZYxd7mWnKQx0';
     pay.service_provider = 'payu_paise'
     pay.hash = hash;
