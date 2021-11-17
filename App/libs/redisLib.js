@@ -1,5 +1,5 @@
 const redis = require('redis');
-let client = redis.createClient();
+let client = redis.createClient({host:'3.141.17.6',port:'6379', connect_timeout:'360000'});
 
 client.on('connect', () => {
 

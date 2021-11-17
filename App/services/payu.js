@@ -39,8 +39,8 @@ module.exports.paymentMethod =  (data) => {
     //We have to additionally pass merchant key to API
   
     pay.key = "WjXg6s"; //store in in different file;
-    pay.surl = `http://localhost:3000/payment/success?userId=${data.userId}&packageId=${data.packageId}`;
-    pay.furl = "http://localhost:3000/payment/fail";
+    pay.surl = `${process.env.baseUrl}/payment/success?userId=${data.userId}&packageId=${data.packageId}`;
+    pay.furl = `${process.env.baseUrl}/payment/fail`;
     pay.salt = 'GkrD8713vSzKHzTDM7V9ZYxd7mWnKQx0';
     pay.service_provider = 'payu_paise'
     pay.hash = hash;
