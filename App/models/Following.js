@@ -5,8 +5,7 @@ const mongoose = require('mongoose');
 let FollowingSchema = mongoose.Schema({
     userId: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     followingId: {
         type: String,

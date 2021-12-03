@@ -29,6 +29,14 @@ let userSchema = mongoose.Schema({
     mobileNumber: {
         type: Number
     },
+    isLive: {
+        type: Boolean,
+        default: false
+    },
+    lifeTimeExperiance: {
+        type: Number,
+        default:0
+    },
     totalCoins: {
         type: Number,
         default: 0

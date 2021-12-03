@@ -2,39 +2,23 @@ const AWS = require('aws-sdk');
 const path = require('path')
 
 
-let uploadFile = async (req, res) => {
+let uploadFile = async (fileParams, initialName) => {
     let s3bucket = new AWS.S3({
         accessKeyId: process.env.awsKey,
         secretAccessKey: process.env.awsSecret,
     });
-    let params
-    if (/mp4/.test(path.extname(req.file.originalname).toLowerCase())) {
-        params = {
+    let params = {
             Bucket: "dazolivenew", //Bucket Name
-            Key: req.body.userId + '-' + new Date().toISOString().replace(/:/g, '_') + '-' + req.file.originalname.replace(/\s/g, '-'),
+            Key: initialName + '-' + new Date().toISOString().replace(/:/g, '_') + '-' + fileParams.originalname.replace(/\s/g, '-'),
             ACL: 'public-read',
-            Body: req.file.buffer,
-            ContentLength: req.file.size
+            Body: fileParams.buffer,
+            ContentLength: fileParams.size
         };
-
-    } else {
-        params = {
-            Bucket: "dazolivenew", //Bucket Name
-            Key: 'profilepic/' + req.body.userId + '-' + new Date().toISOString().replace(/:/g, '_') + '-' + req.file.originalname.replace(/\s/g, '-'),
-            ACL: 'public-read',
-            Body: req.file.buffer,
-            ContentLength: req.file.size
-        };
-
-    }
-
-    console.log(params)
-
-    let s3UploadDetails = await new Promise((resolve) => {
+    let s3UploadDetails = await new Promise((resolve,reject) => {
         s3bucket.upload(params, (err, result) => {
             if (err) {
                 let apiResponse = { status: true, description: "Failed to upload image", statusCode: 500, data: err.message }
-                res.send(apiResponse)
+                reject(apiResponse)
             } else {
                 result.s3Filename = params.Key
                 resolve(result)
@@ -53,8 +37,7 @@ let mediaConvert = async (req, res) => {
         secretAccessKey: process.env.awsSecret,
     });
     AWS.config.mediaconvert = { endpoint: 'https://idej2gpma.mediaconvert.ap-south-1.amazonaws.com' };
-
-    let uploadDetails = await uploadFile(req, res)
+    let uploadDetails = await uploadFile(req.file, req.body.userId)
     console.log(uploadDetails)
     let params = {
         "Queue": "arn:aws:mediaconvert:ap-south-1:610421826492:queues/Default",

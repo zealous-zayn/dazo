@@ -42,7 +42,7 @@ const uploadReel = asyncHandler(async (req, res) => {
 
     await new Promise(asyncHandler(async (resolve) => {
         let reelIdGenerated = nanoId();
-        let newReel = new ReelModel({
+        let newReel = await new ReelModel({
             reelId: reelIdGenerated,
             userId: userDetails.userId,
             caption: req.body.caption,

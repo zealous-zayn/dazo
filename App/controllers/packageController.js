@@ -10,7 +10,7 @@ let addPackage = asyncHandler(async(req,res)=>{
     await new Promise(asyncHandler(async(resolve)=>{
         let packageDetails = await PackageModel.findOne({numberOfCoins:req.body.numberOfCoins})
         if(!packageDetails){
-            let newPackage = new PackageModel({
+            let newPackage = await new PackageModel({
                 packageId: nanoId(),
                 type: req.body.type,
                 amount: req.body.amount,

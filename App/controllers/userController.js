@@ -92,7 +92,7 @@ let signUpFunction = asyncHandler(async (req, res) => {
     await new Promise(asyncHandler(async () => {
         let retrievedUserDetails = await UserModel.findOne({ "$or": [{ email: req.body.email }, { mobileNumber: req.body.mobileNumber }] }).exec();
         if (!retrievedUserDetails) {
-            let newUser = new UserModel({
+            let newUser = await new UserModel({
                 userId: nanoId(),
                 firstName: req.body.firstName,
                 lastName: req.body.lastName || '',
@@ -246,7 +246,7 @@ let uploadProfilePic = asyncHandler(async (req, res) => {
     }))
 
     await new Promise(asyncHandler(async () => {
-        let uploadDetails = await utils.uploadFile(req, res)
+        let uploadDetails = await utils.uploadFile(req.file, `profilepic/${req.body.userId}`)
         let result = await UserModel.findOneAndUpdate({ 'userId': retrievedUserDetails.userId }, { profilePic: uploadDetails.Location }, { new: true }).exec()
         if (!result) {
             let apiResponse = { status: false, description: 'No User Found', statusCode: 404, data: null }
