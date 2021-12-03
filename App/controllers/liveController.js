@@ -32,8 +32,8 @@ let goLive = asyncHandler(async (req, res) => {
             userId: retrievedUserDetails.userId,
             invitePkList: JSON.parse(req.body.invitePkList),
             liveTitle: req.body.liveTitle,
-            liveImage: req.files.liveImage ? await utils.uploadFile(req.files.liveImage[0], `liveimage/${retrievedUserDetails.userId}`) : '',
-            sponserBanner: req.files.sponserBanner ? await utils.uploadFile(req.files.sponserBanner[0], `sponserbanner/${retrievedUserDetails.userId}`) : '',
+            liveImage: req.files.liveImage ? (await utils.uploadFile(req.files.liveImage[0], `liveimage/${retrievedUserDetails.userId}`)).Location : '',
+            sponserBanner: req.files.sponserBanner ? (await utils.uploadFile(req.files.sponserBanner[0], `sponserbanner/${retrievedUserDetails.userId}`)).Location : '',
             startTime: new Date(Date.now()).getTime()
         })
         await newLiveDetails.save()
