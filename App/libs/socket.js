@@ -29,6 +29,8 @@ module.exports.setSocketServer = (server) => {
         });
 
         socket.on('message', (dataObj) => {
+            console.log(dataObj)
+            let obj = JSON.parse(dataObj)
             // let obj = JSON.parse(dataObj)
             // let liveUserDetails
             // redisLib.getAll('liveuser', obj.liveUserId,(err, result) => {
@@ -46,7 +48,7 @@ module.exports.setSocketServer = (server) => {
             //     console.log(`${obj.liveUserId} has been set in cache`)
             // })
             // })
-            io.sockets.emit(`${dataObj.liveUserId}-message`, dataObj)
+            io.sockets.emit(`${obj.liveUserId}-message`, dataObj)
         })
 
         socket.on('get-message',(dataObj)=>{
