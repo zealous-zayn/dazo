@@ -7,9 +7,13 @@ client.on('connect', () => {
 
 });
 
-let getAllLiveUsersInAHash = (hashName, callback) => {
+client.on('error',(err)=>{
+    console.log(err)
+})
 
-    client.HGETALL(hashName, (err, result) => {
+let getAll = (hashName, userId,callback) => {
+
+    client.HGET(hashName, userId,(err, result) => {
 
 
         if (err) {
@@ -34,6 +38,7 @@ let getAllLiveUsersInAHash = (hashName, callback) => {
 
 
 }// end get all users in a hash
+
 
 // function to set new online user.
 let setANewLiveUserInHash = (hashName, key, value, callback) => {
@@ -63,7 +68,7 @@ let deleteUserFromHash = (hashName, key) => {
 }// end delete user from hash
 
 module.exports = {
-    getAllLiveUsersInAHash: getAllLiveUsersInAHash,
+    getAll: getAll,
     setANewLiveUserInHash: setANewLiveUserInHash,
     deleteUserFromHash: deleteUserFromHash
 }

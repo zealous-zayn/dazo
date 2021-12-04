@@ -13,10 +13,12 @@ module.exports.setSocketServer = (server) => {
     io.on('error', e => console.log(e))
 
     io.on("connection", socket => {
-        socket.on("broadcaster", (userId, userData) => {
-            console.log(userData)
-            let broadcaster = socket.id;
-            redisLib.setANewLiveUserInHash('liveuser', userId,userData, (err, result) => {
+        socket.on("broadcaster", (userId) => {
+            let userData = {
+                viewersCount:0,
+                comments:[]
+            }
+            redisLib.setANewLiveUserInHash('liveuser', userId,JSON.stringify(userData), (err, result) => {
                 if (err) {
                     console.log(`some error occurred while setting user in redis`)
                     console.log(err)
@@ -24,47 +26,78 @@ module.exports.setSocketServer = (server) => {
                 console.log(`${userId} has been set in cache`)
                 console.log(result)
             })
-            socket.broadcast.emit("getLiveUser", userData);
         });
 
-        socket.on("getLiveUser", () => {
-            console.log("get user")
-            redisLib.getAllLiveUsersInAHash('liveuser', (err, result) => {
+        socket.on('message', (dataObj) => {
+            let obj = JSON.parse(dataObj)
+            let liveUserDetails
+            redisLib.getAll('liveuser', obj.liveUserId,(err, result) => {
                 if (err) {
                     console.log(`some error occurred while getting user in redis`)
                     console.log(err)
                 }
-
-                io.sockets.emit("getLiveUser", result)
+                liveUserDetails = JSON.parse(result)
+                liveUserDetails.comments.push({userId:obj.userId,userName:obj.userName,message:obj.message})
+            redisLib.setANewLiveUserInHash('liveuser', obj.liveUserId,JSON.stringify(liveUserDetails), (err, result) => {
+                if (err) {
+                    console.log(`some error occurred while setting user in redis`)
+                    console.log(err)
+                }
+                console.log(`${obj.liveUserId} has been set in cache`)
+            })
             })
         })
 
-        socket.on('message', (liveUser, id, msgObj) => {
-            console.log(msgObj)
-            socket.broadcast.emit(`${liveUser}-msg`, msgObj)
-            socket.to(id).emit('live-msg', msgObj)
+        socket.on('get-message',(dataObj)=>{
+            console.log(socket.id)
+            let obj = JSON.parse(dataObj);
+            redisLib.getAll('liveuser', obj.liveUserId,(err, result) => {
+                if (err) {
+                    console.log(`some error occurred while getting user in redis`)
+                    console.log(err)
+                }
+                liveUserDetails = JSON.parse(result)
+                let messages = liveUserDetails.comments.slice(Math.max(liveUserDetails.comments.length - parseInt(obj.numberOfMsgs), 0))
+                io.to(socket.id).emit(`${obj.liveUserId}-get-message`,messages)
+            })
         })
 
-        socket.on('viewer', (name, id) => {
-            console.log(name)
-            io.sockets.emit(`${name}`, id)
+        socket.on('viewer', (dataObj) => {
+            let obj = JSON.parse(dataObj)
+            let liveUserDetails
+            redisLib.getAll('liveuser', obj.liveUserId,(err, result) => {
+                if (err) {
+                    console.log(`some error occurred while getting user in redis`)
+                    console.log(err)
+                }
+                liveUserDetails = JSON.parse(result)
+                liveUserDetails.viewersCount = liveUserDetails.viewersCount+1
+            redisLib.setANewLiveUserInHash('liveuser', obj.liveUserId,JSON.stringify(liveUserDetails), (err, result) => {
+                if (err) {
+                    console.log(`some error occurred while setting user in redis`)
+                    console.log(err)
+                }
+                console.log(`${obj.liveUserId} has been set in cache`)
+                obj.totalViewing = liveUserDetails.viewersCount
+                io.sockets.emit(`${obj.liveUserId}-viewer`, obj)
+            })
+            })
         })
 
-        socket.on("watcher", (id) => {
-            socket.to(id).emit("watcher", socket.id);
-        });
-        socket.on("offer", (id, message) => {
-            socket.to(id).emit("offer", socket.id, message);
-        });
-        socket.on("answer", (id, message) => {
-            socket.to(id).emit("answer", socket.id, message);
-        });
-        socket.on("candidate", (id, message) => {
-            socket.to(id).emit("candidate", socket.id, message);
-        });
+        
+        socket.on('send-gift',(dataObj)=>{
+            let obj = JSON.parse(dataObj)
+            socket.broadcast.emit(`${obj.liveUserId}-received-gift`, obj)
+        })
+
+        socket.on('send-like',(dataObj)=>{
+            let obj = JSON.parse(dataObj)
+            socket.broadcast.emit(`${obj.liveUserId}-received-like`, obj)
+        })
+
         socket.on("disconnect", () => {
             socket.to(socket.id).emit("disconnectPeer", socket.id);
-            redisLib.deleteUserFromHash('liveuser', socket.id)
+            //redisLib.deleteUserFromHash('liveuser', socket.id)
         });
     });
 }
