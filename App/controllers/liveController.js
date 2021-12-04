@@ -11,6 +11,7 @@ const FollowingModel = mongoose.model('Following')
 let nanoId = nanoid.customAlphabet('0123456789ABCDEFGabcdefg_', 8);
 
 let goLive = asyncHandler(async (req, res) => {
+    console.log(req.body)
     let retrievedUserDetails = await new Promise(asyncHandler(async (resolve) => {
         if (req.body.userId) {
             let userDetails = await UserModel.findOneAndUpdate({ userId: req.body.userId }, { isLive: true }, { new: true }).select('-password -__v -_id')
@@ -30,7 +31,7 @@ let goLive = asyncHandler(async (req, res) => {
         let newLiveDetails = await new LiveModel({
             liveId: nanoId(),
             userId: retrievedUserDetails.userId,
-            invitePkList: JSON.parse(req.body.invitePkList),
+            invitePkList: req.body.invitePkList ? JSON.parse(req.body.invitePkList) : [],
             liveTitle: req.body.liveTitle,
             liveImage: req.files.liveImage ? (await utils.uploadFile(req.files.liveImage[0], `liveimage/${retrievedUserDetails.userId}`)).Location : '',
             sponserBanner: req.files.sponserBanner ? (await utils.uploadFile(req.files.sponserBanner[0], `sponserbanner/${retrievedUserDetails.userId}`)).Location : '',
