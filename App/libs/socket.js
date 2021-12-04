@@ -29,23 +29,24 @@ module.exports.setSocketServer = (server) => {
         });
 
         socket.on('message', (dataObj) => {
-            let obj = JSON.parse(dataObj)
-            let liveUserDetails
-            redisLib.getAll('liveuser', obj.liveUserId,(err, result) => {
-                if (err) {
-                    console.log(`some error occurred while getting user in redis`)
-                    console.log(err)
-                }
-                liveUserDetails = JSON.parse(result)
-                liveUserDetails.comments.push({userId:obj.userId,userName:obj.userName,message:obj.message})
-            redisLib.setANewLiveUserInHash('liveuser', obj.liveUserId,JSON.stringify(liveUserDetails), (err, result) => {
-                if (err) {
-                    console.log(`some error occurred while setting user in redis`)
-                    console.log(err)
-                }
-                console.log(`${obj.liveUserId} has been set in cache`)
-            })
-            })
+            // let obj = JSON.parse(dataObj)
+            // let liveUserDetails
+            // redisLib.getAll('liveuser', obj.liveUserId,(err, result) => {
+            //     if (err) {
+            //         console.log(`some error occurred while getting user in redis`)
+            //         console.log(err)
+            //     }
+            //     liveUserDetails = JSON.parse(result)
+            //     liveUserDetails.comments.push({userId:obj.userId,userName:obj.userName,message:obj.message})
+            // redisLib.setANewLiveUserInHash('liveuser', obj.liveUserId,JSON.stringify(liveUserDetails), (err, result) => {
+            //     if (err) {
+            //         console.log(`some error occurred while setting user in redis`)
+            //         console.log(err)
+            //     }
+            //     console.log(`${obj.liveUserId} has been set in cache`)
+            // })
+            // })
+            io.sockets.emit(`${obj.liveUserId}-message`, dataObj)
         })
 
         socket.on('get-message',(dataObj)=>{
