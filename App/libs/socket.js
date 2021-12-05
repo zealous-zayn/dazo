@@ -29,7 +29,6 @@ module.exports.setSocketServer = (server) => {
         });
 
         socket.on('message', (dataObj) => {
-            console.log(dataObj)
             let obj = JSON.parse(dataObj)
             // let obj = JSON.parse(dataObj)
             // let liveUserDetails
@@ -89,6 +88,7 @@ module.exports.setSocketServer = (server) => {
 
         
         socket.on('send-gift',(dataObj)=>{
+            console.log(dataObj)
             let obj = JSON.parse(dataObj)
             socket.broadcast.emit(`${obj.liveUserId}-received-gift`, obj)
         })
