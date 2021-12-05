@@ -47,7 +47,7 @@ module.exports.setSocketServer = (server) => {
             //     console.log(`${obj.liveUserId} has been set in cache`)
             // })
             // })
-            io.sockets.emit(`${obj.liveUserId}-message`, dataObj)
+            socket.broadcast.emit(`${obj.liveUserId}-message`, dataObj)
         })
 
         socket.on('get-message',(dataObj)=>{
