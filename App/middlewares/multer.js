@@ -13,7 +13,7 @@ const storage = multer.memoryStorage({
 
 const upload = multer({
     storage: storage, fileFilter: (req, file, cb) => {
-        const filetypes = /mp4|jpg|png/;
+        const filetypes = /mp4|jpg|png|webp|gif/;
         const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
         if (extname) {
             return cb(null, true);
