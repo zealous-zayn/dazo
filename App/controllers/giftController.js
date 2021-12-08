@@ -13,7 +13,7 @@ let addGift = asyncHandler(async (req,res)=>{
         let giftDetails = await GiftModel.findOne({giftName:req.body.giftName})
         if(!giftDetails){
             let id = nanoId()
-            let newGift = await new PackageModel({
+            let newGift = await new GiftModel({
                 giftId: id,
                 giftName: req.body.giftName,
                 giftType: req.body.giftType,
