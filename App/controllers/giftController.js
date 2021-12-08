@@ -36,11 +36,11 @@ let getAllGifts = asyncHandler(async(req,res)=>{
     const result = await GiftModel.find().select(' -__v -_id').lean().exec()
 
     if (!result) {
-        let apiResponse = { status: false, description: 'No Package Found', statusCode: 404, data: null }
+        let apiResponse = { status: false, description: 'No Gift Found', statusCode: 404, data: null }
         res.send(apiResponse)
     } else {
 
-        let apiResponse = { status: true, description: 'All Package Details Found', statusCode: 200, data: result }
+        let apiResponse = { status: true, description: 'All Gift Details Found', statusCode: 200, data: result }
         res.send(apiResponse)
     }
 });
