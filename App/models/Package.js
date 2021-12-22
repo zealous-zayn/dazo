@@ -12,6 +12,10 @@ let packageSchema = mongoose.Schema({
         type: String,
         required: true
     }, 
+    packageImage: {
+        type: String,
+        default:""
+    },
     amount: {
         type: Number,
         required: true
