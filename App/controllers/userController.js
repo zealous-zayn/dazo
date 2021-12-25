@@ -58,9 +58,11 @@ let getSingleUser = asyncHandler(async (req, res) => {
 })// end get single user
 
 let editUser = asyncHandler(async (req, res) => {
-
+    if(req.body.password){
+        req.body.password = passwordLib.hashpassword(validateInput.Password(req.body.password))
+    }
     let options = req.body;
-    const result = await UserModel.findOneAndUpdate({ 'userId': req.body.userId }, options).exec()
+    const result = await UserModel.findOneAndUpdate({ 'userId': req.body.userId }, options).select('-password -__v -_id').exec()
     if (!result) {
         let apiResponse = { status: false, description: 'No User Found', statusCode: 404, data: null }
         res.send(apiResponse);
@@ -143,6 +145,7 @@ let loginFunction = asyncHandler((async (req, res) => {
             delete retrievedUserDetailsObj._id
             delete retrievedUserDetailsObj.otp
             delete retrievedUserDetailsObj.__v
+            delete retrievedUserDetailsObj.password
             resolve(retrievedUserDetailsObj)
         } else {
             let apiResponse = { status: false, description: 'Wrong Password.Login Failed', statusCode: 400, data: null };
