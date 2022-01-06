@@ -20,6 +20,14 @@ let userSchema = mongoose.Schema({
     profilePic: {
         type: String
     },
+    userTitle: {
+       type: String,
+       default: 'newbee' 
+    },
+    userFrame:{
+        type: String,
+        default:''
+    },
     password: {
         type: String
     },
