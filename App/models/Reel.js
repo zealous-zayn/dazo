@@ -11,6 +11,14 @@ let reelSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    userName: {
+        type: String,
+        default:""
+    },
+    profilePic: {
+        type: String,
+        default: ""
+    },
     caption: {
         type: String,
         default: ''
