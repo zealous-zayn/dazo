@@ -484,11 +484,6 @@ let commentReel = asyncHandler(async (req, res) => {
     }))
 
     let commentResolvedDetails = await new Promise(asyncHandler(async (resolve) => {
-        let commentDetails = await CommentModel.find({ reelId: reelDetails.reelId, userId: reelDetails.userId });
-        if (commentDetails.length !== 0) {
-            let updateComment = await CommentModel.findOneAndUpdate({ reelId: reelDetails.reelId, userId: reelDetails.userId }, { comment: req.body.comment }, { new: true })
-            resolve({ data: updateComment, desc: "Comment Updated Successfully" })
-        } else {
             let newComment = await new CommentModel({
                 commentId: nanoId(),
                 reelId: reelDetails.reelId,
@@ -498,7 +493,6 @@ let commentReel = asyncHandler(async (req, res) => {
 
             let commentNewDetails = await newComment.save()
             resolve({ data: commentNewDetails, desc: "Comment Created Successfully" })
-        }
     }))
 
     let apiResponse = { status: true, description: commentResolvedDetails.desc, statusCode: 200, data: commentResolvedDetails.data };
