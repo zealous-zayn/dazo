@@ -45,6 +45,8 @@ const uploadReel = asyncHandler(async (req, res) => {
         let newReel = await new ReelModel({
             reelId: reelIdGenerated,
             userId: userDetails.userId,
+            profilePic: userDetails.profilePic ? userDetails.profilePic : "",
+            userName: userDetails.firstName + ' ' + userDetails.lastName,
             caption: req.body.caption,
             fileName: req.file.originalname,
             filePath: mediaConvertDetails.Job.FilePath,
@@ -332,6 +334,8 @@ let getReels = asyncHandler(async (req, res) => {
                             else: { $arrayElemAt: ["$likeDetailsAsUser.liked", 0] }
                         }
                     },
+                    profilePic: "$profilePic",
+                    userName:"$userName",
                     fileName: "$fileName",
                     fileSize: "$fileSize",
                     fileType: "$fileType",
