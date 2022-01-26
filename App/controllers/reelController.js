@@ -360,7 +360,7 @@ let getReels = asyncHandler(async (req, res) => {
 
     let resposneObj = {
         reels: reelCollection,
-        nextUrl: pageNo !== totalPages ? `/download-reel/?userId=${req.query.userId}&pageNo=${pageNo + 1}&limit=${limit}&endKey=${endKey}` : null,
+        nextUrl: pageNo !== totalPages ? `/get-all-reel?userId=${req.query.userId}&pageNo=${pageNo + 1}&limit=${limit}&endKey=${endKey}` : null,
         nextPage: pageNo !== totalPages,
         totalPages: totalPages
     }
