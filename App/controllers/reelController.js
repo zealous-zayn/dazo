@@ -227,6 +227,8 @@ let getReels = asyncHandler(async (req, res) => {
                                 else: { $arrayElemAt: ["$likeDetailsAsUser.liked", 0] }
                             }
                         },
+                        profilePic: "$profilePic",
+                        userName:"$userName",
                         fileName: "$fileName",
                         fileSize: "$fileSize",
                         fileType: "$fileType",
